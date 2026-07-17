@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card-Album</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="pageLoading" class="page-loading" style="display: none;">
+        <div class="spinner"></div>
+        <p class="loading-text">Carregando seu álbum...</p>
+    </div>
+
+    <div id="authModal" class="auth-modal">
+        <div class="auth-content">
+            <h2 id="authTitle" class="title" style="font-size: 2rem; text-align: center;">Fazer Login</h2>
+            <form id="authForm">
+                <div class="input-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" required placeholder="seuemail@exemplo.com">
+                </div>
+                <div class="input-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required placeholder="Sua senha">
+                </div>
+                <button type="submit" id="authSubmitBtn" class="auth-btn">Entrar</button>
+            </form>
+            <p class="auth-toggle">Não tem uma conta? <span id="toggleAuthMode">Cadastre-se</span></p>
+        </div>
+    </div>
+    <div id="mainContent" style="display: none;">
+        <header class="page-header">
+            <img src="image/LogoMotta.png" alt="Logo Motta" class="header-logo">
+            <h1 class="title">Motta Card Album</h1>
+            <button id="logoutBtn" class="auth-btn" style="width: auto; padding: 0.7rem 1rem; justify-self: end;">Sair</button>
+        </header>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📷</div>
+            <p class="upload-text">Arraste sua foto aqui ou clique para selecionar</p>
+            <input type="file" id="imageInput" accept="image/*" hidden>
+        </div>
+
+        <div class="menu">
+            <button class="page-nav-button active-page" data-page="1">1</button>
+            <button class="createNewAlbumButton">+</button>
+        </div>
+
+        <div class="album-container page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 0 20px;">
+            <h2 class="page-Number" id="pageTitle">Página 2</h2>
+            <button id="deletePageButton" class="delete-page-btn" style="display: none;">Excluir Página</button>
+        </div>
+            <div class="album">
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+                <div class="album-slot"></div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
