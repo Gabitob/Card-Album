@@ -34,6 +34,15 @@ const pageNameDisplay = document.getElementById('pageNameDisplay');
 const pageLoading = document.getElementById('pageLoading');
 
 let paginasAlbum = {};
+const imageLightbox = document.getElementById('imageLightbox');
+const lightboxImage = document.getElementById('lightboxImage');
+const lightboxClose = document.getElementById('lightboxClose');
+const lightboxNext = document.getElementById('lightboxNext');
+const lightboxPrev = document.getElementById('lightboxPrev');
+const lightboxCounter = document.getElementById('lightboxCounter');
+const lightboxOverlay = document.getElementById('lightboxOverlay');
+let todasAsImagens = [];
+let indiceImagemAtual = 0;
 let paginaAtual = 1;
 let contadorPaginas = 1;
 let cardArrastado = null;
@@ -252,6 +261,15 @@ function atualizarEventosDrag(card) {
         card.classList.remove('dragging');
         cardArrastado = null;
     });
+    
+    const img = card.querySelector('img');
+    if (img) {
+        img.addEventListener('click', (e) => {
+            e.stopPropagation();
+            abrirLightbox(img.src);
+        });
+        img.style.cursor = 'pointer';
+    }
 }
 
 function configurarDragAndDrop() {
@@ -494,7 +512,6 @@ async function carregarAlbumDaNuvem() {
                 console.log("Carregando página:", numeroPagina, "com dados:", estruturaNuvem[numeroPagina]);
                 const dadosPagina = estruturaNuvem[numeroPagina];
                 
-                // Se a página não tiver dados ou não for um array, cria 8 slots vazios
                 if (!dadosPagina || !Array.isArray(dadosPagina) || dadosPagina.length === 0) {
                     console.log("Página vazia ou inválida, criando 8 slots vazios");
                     paginasAlbum[numeroPagina] = criarSlotsVazios();
@@ -572,3 +589,72 @@ async function carregarAlbumDaNuvem() {
         if (pageLoading) pageLoading.style.display = 'none';
     }
 }
+
+function coletarTodasAsImagens() {
+    todasAsImagens = [];
+    const imagens = document.querySelectorAll('.album-item img');
+    imagens.forEach(img => {
+        todasAsImagens.push(img.src);
+    });
+}
+
+function abrirLightbox(srcImagem) {
+    coletarTodasAsImagens();
+    indiceImagemAtual = todasAsImagens.indexOf(srcImagem);
+    
+    if (indiceImagemAtual === -1) {
+        indiceImagemAtual = 0;
+    }
+    
+    atualizarLightbox();
+    imageLightbox.classList.add('active');
+}
+
+function fecharLightbox() {
+    imageLightbox.classList.remove('active');
+}
+
+function atualizarLightbox() {
+    if (todasAsImagens.length === 0) return;
+    
+    lightboxImage.src = todasAsImagens[indiceImagemAtual];
+    lightboxCounter.textContent = `${indiceImagemAtual + 1} / ${todasAsImagens.length}`;
+}
+
+function proximaImagem() {
+    indiceImagemAtual = (indiceImagemAtual + 1) % todasAsImagens.length;
+    atualizarLightbox();
+}
+
+function imagemAnterior() {
+    indiceImagemAtual = (indiceImagemAtual - 1 + todasAsImagens.length) % todasAsImagens.length;
+    atualizarLightbox();
+}
+
+if (lightboxClose) {
+    lightboxClose.addEventListener('click', fecharLightbox);
+}
+
+if (lightboxOverlay) {
+    lightboxOverlay.addEventListener('click', fecharLightbox);
+}
+
+if (lightboxNext) {
+    lightboxNext.addEventListener('click', proximaImagem);
+}
+
+if (lightboxPrev) {
+    lightboxPrev.addEventListener('click', imagemAnterior);
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!imageLightbox.classList.contains('active')) return;
+    
+    if (e.key === 'Escape') {
+        fecharLightbox();
+    } else if (e.key === 'ArrowRight') {
+        proximaImagem();
+    } else if (e.key === 'ArrowLeft') {
+        imagemAnterior();
+    }
+});
