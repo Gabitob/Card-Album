@@ -51,7 +51,14 @@
         <div class="album-container page">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 0 20px;">
             <h2 class="page-Number" id="pageTitle">Página 2</h2>
-            <button id="deletePageButton" class="delete-page-btn" style="display: none;">Excluir Página</button>
+            <div class="page-name-container">
+                <span id="pageNameDisplay" class="page-name-display">Nome da página</span>
+                <input type="text" id="pageNameInput" class="page-name-input" placeholder="Nome da página..." maxlength="30">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="savePageButton" class="save-page-btn">Salvar</button>
+                <button id="deletePageButton" class="delete-page-btn" style="display: none;">Excluir Página</button>
+            </div>
         </div>
             <div class="album">
                 <div class="album-slot"></div>

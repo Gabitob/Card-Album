@@ -28,6 +28,9 @@ const authTitle = document.getElementById('authTitle');
 const authSubmitBtn = document.getElementById('authSubmitBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const deletePageButton = document.getElementById('deletePageButton');
+const savePageButton = document.getElementById('savePageButton');
+const pageNameInput = document.getElementById('pageNameInput');
+const pageNameDisplay = document.getElementById('pageNameDisplay');
 const pageLoading = document.getElementById('pageLoading');
 
 let paginasAlbum = {};
@@ -37,6 +40,7 @@ let cardArrastado = null;
 let usuarioLogadoId = null;
 let modoCadastro = false;
 let carregandoDaNuvem = false;
+let nomesPaginas = {};
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -93,6 +97,29 @@ if (authForm) {
 
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => signOut(auth));
+}
+
+if (savePageButton) {
+    savePageButton.addEventListener('click', async () => {
+        if (savePageButton.classList.contains('saving')) return;
+
+        savePageButton.classList.add('saving');
+        savePageButton.textContent = 'Salvando';
+
+        await salvarAlbumNaNuvem();
+
+        savePageButton.classList.remove('saving');
+        savePageButton.textContent = 'Salvar';
+    });
+}
+
+if (pageNameInput) {
+    pageNameInput.addEventListener('input', (e) => {
+        nomesPaginas[String(paginaAtual)] = e.target.value;
+        if (pageNameDisplay) {
+            pageNameDisplay.textContent = e.target.value || 'Nome da página';
+        }
+    });
 }
 
 function criarSlotsVazios() {
@@ -255,7 +282,7 @@ function configurarDragAndDrop() {
 
 function createNewAlbumPage() {
     salvarPaginaAtual();
-    contadorPaginas = Object.keys(paginasAlbum).length + 1;
+    contadorPaginas++;
 
     const novosSlots = [];
     for (let i = 0; i < 8; i++) {
@@ -281,12 +308,19 @@ function createNewAlbumPage() {
 
 function salvarPaginaAtual() {
     if (albumContainer) {
-        paginasAlbum[String(paginaAtual)] = Array.from(albumContainer.children);
+        const children = Array.from(albumContainer.children);
+        console.log("Salvando página atual:", paginaAtual, "com", children.length, "elementos");
+        console.log("Conteúdo dos children:", children.map(child => {
+            const img = child.querySelector('img');
+            return img ? 'tem imagem' : 'vazio';
+        }));
+        paginasAlbum[String(paginaAtual)] = children;
     }
 }
 
 function switchAlbumPage(numeroDaPaginaAlvo) {
     if (!carregandoDaNuvem) {
+        console.log("Conteúdo do albumContainer antes de salvar:", albumContainer.children);
         salvarPaginaAtual();
     }
     paginaAtual = numeroDaPaginaAlvo;
@@ -302,9 +336,21 @@ function switchAlbumPage(numeroDaPaginaAlvo) {
     
     requestAnimationFrame(() => {
         slotsSalvos.forEach(slot => albumContainer.appendChild(slot));
-        
+
         if (deletePageButton) {
             deletePageButton.style.display = (numeroDaPaginaAlvo === '1') ? 'none' : 'block';
+        }
+
+        if (savePageButton) {
+            savePageButton.style.display = 'block';
+        }
+
+        if (pageNameInput) {
+            pageNameInput.value = nomesPaginas[numeroDaPaginaAlvo] || '';
+        }
+
+        if (pageNameDisplay) {
+            pageNameDisplay.textContent = nomesPaginas[numeroDaPaginaAlvo] || 'Nome da página';
         }
 
         configurarDragAndDrop();
@@ -383,9 +429,10 @@ async function salvarAlbumNaNuvem() {
     try {
         await setDoc(doc(db, "usuarios_albuns", usuarioLogadoId), {
             estrutura: dadosParaSalvar,
-            contadorPaginas: contadorPaginas
+            contadorPaginas: contadorPaginas,
+            nomesPaginas: nomesPaginas
         });
-        console.log("Álbum sincronizado na nuvem!");
+        console.log("Álbum sincronizado na nuvem!", dadosParaSalvar);
     } catch (error) {
         console.error("Erro ao salvar álbum:", error);
     }
@@ -413,8 +460,8 @@ function renderizarBotoesDePagina() {
         const pageButton = document.createElement('button');
         pageButton.classList.add('page-nav-button');
         pageButton.textContent = i;
-        pageButton.dataset.page = i;
-        pageButton.addEventListener('click', () => switchAlbumPage(i));
+        pageButton.dataset.page = String(i);
+        pageButton.addEventListener('click', () => switchAlbumPage(String(i)));
         menuContainer.insertBefore(pageButton, createNewAlbumButton);
     }
 }
@@ -435,10 +482,26 @@ async function carregarAlbumDaNuvem() {
             const dados = docSnap.data();
             contadorPaginas = dados.contadorPaginas || 1;
             const estruturaNuvem = dados.estrutura;
+            nomesPaginas = dados.nomesPaginas || {};
+
+            console.log("Carregando dados da nuvem:", dados);
+            console.log("Contador de páginas:", contadorPaginas);
+            console.log("Estrutura da nuvem:", estruturaNuvem);
+            console.log("Nomes das páginas:", nomesPaginas);
 
             paginasAlbum = {};
             Object.keys(estruturaNuvem).forEach(numeroPagina => {
-                paginasAlbum[numeroPagina] = estruturaNuvem[numeroPagina].map(url => {
+                console.log("Carregando página:", numeroPagina, "com dados:", estruturaNuvem[numeroPagina]);
+                const dadosPagina = estruturaNuvem[numeroPagina];
+                
+                // Se a página não tiver dados ou não for um array, cria 8 slots vazios
+                if (!dadosPagina || !Array.isArray(dadosPagina) || dadosPagina.length === 0) {
+                    console.log("Página vazia ou inválida, criando 8 slots vazios");
+                    paginasAlbum[numeroPagina] = criarSlotsVazios();
+                    return;
+                }
+                
+                paginasAlbum[numeroPagina] = dadosPagina.map(url => {
                     const slot = document.createElement('div');
                     slot.classList.add('album-slot');
 
@@ -454,9 +517,9 @@ async function carregarAlbumDaNuvem() {
                         const deleteButton = document.createElement('button');
                         deleteButton.classList.add('delete-button');
                         deleteButton.textContent = '×';
-                        deleteButton.addEventListener('click', () => { 
-                            card.remove(); 
-                            salvarAlbumNaNuvem(); 
+                        deleteButton.addEventListener('click', () => {
+                            card.remove();
+                            salvarAlbumNaNuvem();
                         });
                         card.appendChild(deleteButton);
                         slot.appendChild(card);
@@ -466,6 +529,8 @@ async function carregarAlbumDaNuvem() {
                 });
             });
 
+            console.log("Páginas carregadas:", Object.keys(paginasAlbum));
+
             for (let i = 1; i <= contadorPaginas; i++) {
                 const pageButton = document.createElement('button');
                 pageButton.classList.add('page-nav-button');
@@ -474,7 +539,7 @@ async function carregarAlbumDaNuvem() {
                 pageButton.addEventListener('click', () => switchAlbumPage(String(i)));
                 menuContainer.insertBefore(pageButton, createNewAlbumButton);
             }
-            
+
             switchAlbumPage('1');
             atualizarBotaoAtivo();
         } 
